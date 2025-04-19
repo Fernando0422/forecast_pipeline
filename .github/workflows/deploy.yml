@@ -1,0 +1,37 @@
+name: Deploy Forecast Pipeline
+
+on:
+  schedule:
+    # every day at midnight UTC; tweak as needed
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install dependencies
+        run: |
+          cd functions
+          npm ci
+
+      - name: Run Forecast Pipeline
+        run: node functions/pipeline.js
+
+      # If you need to write back to Firestore or deploy:
+      - name: Deploy results to Firestore
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: |
+          cd functions
+          npm install -g firebase-tools
+          firebase deploy --only firestore --token "$FIREBASE_TOKEN"
