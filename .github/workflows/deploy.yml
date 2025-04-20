@@ -1,3 +1,4 @@
+# .github/workflows/deploy.yml
 name: Deploy Forecast Pipeline
 
 on:
@@ -11,31 +12,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1) grab your code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2) write your service‐account JSON out of the secret into a file
-      - name: Set up Firebase credentials
-        run: |
-          mkdir -p functions
-          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > functions/serviceAccountKey.json
-        shell: bash
-
-      # 3) pick a modern Node runtime
       - name: Use Node.js 20
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      # 4) install your functions’ deps
+      - name: Write Firebase service account key
+        run: |
+          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > functions/serviceAccountKey.json
+
       - name: Install dependencies
         working-directory: functions
         run: npm ci
 
-      # 5) run your pipeline (it will pick up GOOGLE_APPLICATION_CREDENTIALS automatically)
       - name: Run Forecast Pipeline
         working-directory: functions
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: serviceAccountKey.json
         run: node pipeline.js
