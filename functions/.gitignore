@@ -1,2 +1,5 @@
 node_modules/
 *.local
+# in functions/.gitignore
+mayan-roots-43fe8-firebase-adminsdk-*.json
+mayan-roots-43fe8-firebase-adminsdk-*.json

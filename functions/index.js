@@ -1,26 +1,23 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * const {onCall} = require("firebase-functions/v2/https");
- * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
+// functions/index.js
 
-const {onRequest} = require("firebase-functions/v2/https");
-const {logger} = require("firebase-functions");
-const {runForecastPipeline} = require("./pipeline");
+const admin = require("firebase-admin");
+const { onRequest } = require("firebase-functions/v2/https");
+const serviceAccount = require("./mayan-roots-43fe8-firebase-adminsdk-fbsvc-00504a1b8a.json");
+const { runForecastPipeline } = require("./pipeline");
+
+// initialize Admin SDK
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+const firestore = admin.firestore();
 
 exports.forecast = onRequest(async (req, res) => {
-  logger.info("Running forecast pipeline!");
-  await runForecastPipeline();
-  res.send("Forecast pipeline executed!");
+  console.log("Starting forecast pipeline…");
+  try {
+    await runForecastPipeline(firestore);
+    res.send("Forecast pipeline executed successfully!");
+  } catch (err) {
+    console.error("Pipeline failed:", err);
+    res.status(500).send("Pipeline execution error");
+  }
 });
-
-// Create and deploy your first functions
-// https://firebase.google.com/docs/functions/get-started
-
-// exports.helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
