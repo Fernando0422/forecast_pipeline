@@ -1,14 +1,6 @@
-name: Deploy Forecast Pipeline
-
-on:
-  schedule:
-    - cron: '0 0 * * *'
-  workflow_dispatch:
-
 jobs:
   run-pipeline:
-    runs-on: ubuntu-latest
-
+    # …
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -22,11 +14,12 @@ jobs:
         working-directory: functions
         run: npm ci
 
-      - name: Authenticate to Firestore
+      - name: Write Service Account Key
         run: |
-          echo "${{ secrets.GCP_SA_KEY }}" > $HOME/gcloud-key.json
-          export GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json
+          echo "${{ secrets.SERVICE_ACCOUNT_KEY }}" > functions/serviceAccountKey.json
 
       - name: Run Forecast Pipeline
         working-directory: functions
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/functions/serviceAccountKey.json
         run: node pipeline.js
