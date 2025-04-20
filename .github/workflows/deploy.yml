@@ -1,28 +1,32 @@
-# .github/workflows/deploy.yml
 name: Deploy Forecast Pipeline
 
 on:
+  # every day at midnight UTC
   schedule:
-    # every day at midnight UTC
     - cron: '0 0 * * *'
+  # allow manual runs in the UI or via CLI
   workflow_dispatch:
 
 jobs:
   run-pipeline:
     runs-on: ubuntu-latest
+    env:
+      # this secret should contain the full JSON of your service account key
+      FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Write service account key
+        run: |
+          mkdir -p functions
+          echo "$FIREBASE_SERVICE_ACCOUNT" > functions/serviceAccountKey.json
+
       - name: Use Node.js 20
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
-
-      - name: Write Firebase service account key
-        run: |
-          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > functions/serviceAccountKey.json
+          node-version: 20
 
       - name: Install dependencies
         working-directory: functions
