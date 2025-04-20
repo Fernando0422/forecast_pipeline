@@ -3,3 +3,4 @@ node_modules/
 # in functions/.gitignore
 mayan-roots-43fe8-firebase-adminsdk-*.json
 mayan-roots-43fe8-firebase-adminsdk-*.json
+serviceAccountKey.json
