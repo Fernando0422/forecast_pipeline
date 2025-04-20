@@ -1,4 +1,13 @@
 // functions/pipeline.js
+const admin = require("firebase-admin");
+const serviceAccount = require("./serviceAccountKey.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+
+const { Firestore } = require("@google-cloud/firestore");
+const firestore = new Firestore();
 
 const { exec } = require("child_process");
 const path = require("path");
