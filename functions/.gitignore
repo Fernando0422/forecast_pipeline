@@ -1,6 +1,10 @@
+# functions/.gitignore
+# node modules
 node_modules/
-*.local
-# in functions/.gitignore
-mayan-roots-43fe8-firebase-adminsdk-*.json
-mayan-roots-43fe8-firebase-adminsdk-*.json
+
+# don’t check in your service account
 serviceAccountKey.json
+
+# emulator & debug logs
+*.log
+.firebaserc
