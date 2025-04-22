@@ -1,17 +1,17 @@
 name: Deploy Forecast Pipeline
 
 on:
-  # every day at midnight UTC
+  # Run every day at midnight UTC
   schedule:
     - cron: '0 0 * * *'
-  # allow manual runs in the UI or via CLI
+  # Also allow manual triggers
   workflow_dispatch:
 
 jobs:
   run-pipeline:
     runs-on: ubuntu-latest
     env:
-      # this secret should contain the full JSON of your service account key
+      # This secret must contain the full JSON of your service account key
       FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
     steps:
@@ -21,12 +21,12 @@ jobs:
       - name: Write service account key
         run: |
           mkdir -p functions
-          echo "$FIREBASE_SERVICE_ACCOUNT" > functions/serviceAccountKey.json
+          echo "${{ env.FIREBASE_SERVICE_ACCOUNT }}" > functions/serviceAccountKey.json
 
       - name: Use Node.js 20
         uses: actions/setup-node@v3
         with:
-          node-version: 20
+          node-version: '20'
 
       - name: Install dependencies
         working-directory: functions
