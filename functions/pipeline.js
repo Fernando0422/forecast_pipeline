@@ -1,48 +1,55 @@
 // functions/pipeline.js
 const admin = require("firebase-admin");
 const serviceAccount = require("./serviceAccountKey.json");
+const { exec } = require("child_process");
+const path = require("path");
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
-const { Firestore } = require("@google-cloud/firestore");
-const firestore = new Firestore();
+const db = admin.firestore();
 
-const { exec } = require("child_process");
-const path = require("path");
-
-/**
- * Runs the Python forecast script and writes its stdout to Firestore.
- *
- * @param {FirebaseFirestore.Firestore} firestore - an initialized Admin‐SDK Firestore instance
- */
-async function runForecastPipeline(firestore) {
+async function runForecastPipeline() {
   return new Promise((resolve, reject) => {
-    // adjust this relative path to wherever your forecast_script.py lives
-    const scriptPath = path.join(__dirname, "../your-script-folder/forecast_script.py");
+    const scriptPath = path.join(__dirname, "../weather_pipeline.js");
 
-    exec(`python3 ${scriptPath}`, async (error, stdout, stderr) => {
+    exec(`node ${scriptPath}`, async (error, stdout, stderr) => {
       if (error) {
-        console.error(`Error executing pipeline:`, error);
+        console.error("❌ Error running forecast script:", error);
         return reject(error);
       }
-      console.log("Script output:", stdout);
+      const output = stdout.trim();
+      console.log("📦 Script output:", output);
 
       try {
-        const docRef = firestore.collection("forecast_results").doc("latest");
-        await docRef.set({
-          output: stdout,
-          updatedAt: new Date(),
-        });
-        console.log("Wrote results to Firestore");
+        await db
+          .collection("forecast_results")
+          .doc("latest")
+          .set({
+            output,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+        console.log("✅ Wrote forecast to Firestore");
         resolve();
       } catch (writeErr) {
-        console.error("Error writing to Firestore:", writeErr);
+        console.error("❌ Error writing to Firestore:", writeErr);
         reject(writeErr);
       }
     });
   });
 }
 
-module.exports = { runForecastPipeline };
+if (require.main === module) {
+  runForecastPipeline()
+    .then(() => {
+      console.log("🎉 Pipeline complete");
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.error("🔥 Pipeline failed", err);
+      process.exit(1);
+    });
+}
+
+module.exports = runForecastPipeline;
