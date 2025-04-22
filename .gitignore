@@ -3,3 +3,4 @@ node_modules/
 serviceAccountKey.json
 node_modules/
 results.json
+functions/serviceAccountKey.json
