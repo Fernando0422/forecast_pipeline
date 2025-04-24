@@ -11,9 +11,7 @@ jobs:
   run-pipeline:
     runs-on: ubuntu-latest
     env:
-      # no need to re-export this, we’ll pull it directly from secrets:
-      # FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-
+      FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -21,9 +19,7 @@ jobs:
       - name: Write service account key
         run: |
           mkdir -p functions
-          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" \
-            | base64 --decode \
-            > functions/serviceAccountKey.json
+          echo "${{ env.FIREBASE_SERVICE_ACCOUNT }}" | base64 --decode > functions/serviceAccountKey.json
 
       - name: Use Node.js 20
         uses: actions/setup-node@v3
