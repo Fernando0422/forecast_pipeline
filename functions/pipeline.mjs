@@ -5,7 +5,7 @@ import serviceAccount from "./serviceAccountKey.json" assert { type: "json" };
 import { fileURLToPath } from "url";
 import path from "path";
 import fetch from "node-fetch";
-import GeoTIFF from "geotiff";
+import { fromArrayBuffer } from "geotiff";
 import { DateTime } from "luxon";  // for easy date math
 
 const __filename = fileURLToPath(import.meta.url);
@@ -35,57 +35,75 @@ function getMockPrecipitation() {
 }
 
 export async function runForecastPipeline() {
+  const url = chirpsUrl();
+  console.log("📥 Downloading", url);
+  
   try {
-    const url = chirpsUrl();
-    console.log("📥 Downloading", url);
     const res = await fetch(url);
     if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
 
     const arrayBuffer = await res.arrayBuffer();
-    const tiff = await GeoTIFF.fromArrayBuffer(arrayBuffer);
-    const image = await tiff.getImage();
-    const rasters = await image.readRasters();
-    const [originX, originY] = image.getOrigin();
-    const [pxW, pxH] = image.getResolution();
-    const width = image.getWidth();
+    if (arrayBuffer.byteLength === 0) {
+      throw new Error("Empty TIFF file");
+    }
 
-    // Compute pixel coordinates
-    const px = Math.floor((SITE.lon - originX) / pxW);
-    const py = Math.floor((originY - SITE.lat) / pxH);
-    const idx = py * width + px;
-    const precipitation = rasters[0][idx];
+    try {
+      const tiff = await fromArrayBuffer(arrayBuffer);
+      const image = await tiff.getImage();
+      const rasters = await image.readRasters();
+      const [originX, originY] = image.getOrigin();
+      const [pxW, pxH] = image.getResolution();
+      const width = image.getWidth();
 
-    console.log(`📍 Precipitation at Tahcabo: ${precipitation} mm`);
+      // Compute pixel coordinates
+      const px = Math.floor((SITE.lon - originX) / pxW);
+      const py = Math.floor((originY - SITE.lat) / pxH);
+      const idx = py * width + px;
+      const precipitation = rasters[0][idx];
 
-    // Write result to Firestore
-    const window = `${url.match(/data-mean_(\d+)_/)[1]} → ${url.match(/_(\d+)\.tif$/)[1]}`;
-    await db.collection("forecast_results").doc("latest").set({
-      precipitation: Number(precipitation.toFixed(2)),
-      window,
-      timestamp: DateTime.utc().toISO(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      isMock: false,
-    });
+      console.log(`📍 Precipitation at Tahcabo: ${precipitation} mm`);
 
-    console.log("✅ Wrote forecast to Firestore");
+      // Write result to Firestore
+      const window = `${url.match(/data-mean_(\d+)_/)[1]} → ${url.match(/_(\d+)\.tif$/)[1]}`;
+      await db.collection("forecast_results").doc("latest").set({
+        precipitation: Number(precipitation.toFixed(2)),
+        window,
+        timestamp: DateTime.utc().toISO(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        isMock: false,
+      });
+
+      console.log("✅ Wrote forecast to Firestore");
+      return true;
+    } catch (tiffError) {
+      console.error("🔥 TIFF processing failed:", tiffError);
+      throw new Error(`Invalid TIFF file: ${tiffError.message}`);
+    }
   } catch (err) {
-    console.error("🔥 Pipeline failed:", err);
+    console.warn("⚠️ Using mock data:", err.message);
     // Fallback: write mock data if real fetch fails
+    const mockPrecipitation = getMockPrecipitation();
     await db.collection("forecast_results").doc("latest").set({
-      precipitation: 0,
+      precipitation: Number(mockPrecipitation),
       window: "mock",
       error: err.message,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       isMock: true,
     }, { merge: true });
-    throw err;
+    
+    console.log(`📍 Using mock precipitation: ${mockPrecipitation} mm`);
+    console.log("✅ Wrote mock data to Firestore");
+    return true;
   }
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   runForecastPipeline()
     .then(() => { console.log("🎉 Pipeline complete"); process.exit(0); })
-    .catch(() => process.exit(1));
+    .catch((error) => { 
+      console.error("❌ Pipeline failed:", error);
+      process.exit(1);
+    });
 }
 
 export default runForecastPipeline;

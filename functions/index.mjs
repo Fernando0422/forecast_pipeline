@@ -4,8 +4,10 @@ async function main() {
   console.log("🚀 Starting forecast pipeline...");
   try {
     await runForecastPipeline();
+    console.log("🎉 Pipeline complete");
     process.exit(0);
-  } catch {
+  } catch (error) {
+    console.error("❌ Pipeline failed with error:", error);
     process.exit(1);
   }
 }
