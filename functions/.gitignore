@@ -8,3 +8,4 @@ serviceAccountKey.json
 # emulator & debug logs
 *.log
 .firebaserc
+serviceAccountKey.json
