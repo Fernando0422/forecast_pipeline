@@ -20,13 +20,17 @@ const db = admin.firestore();
 // Coordinates for Tahcabo
 const SITE = { lon: -88.48, lat: 20.18 };
 
-// Build the real TIFF URL from Firebase Hosting
+// ————————————————
+// 🔗 Real CHIRPS‐GEFS URL builder
 function chirpsUrl() {
   const today = DateTime.utc();
   const start = today.toFormat("yyyyLLdd");
   const end   = today.plus({ days: 4 }).toFormat("yyyyLLdd");
-  return `https://mayan-roots-43fe8.web.app/forecasts/data-mean_${start}_${end}.tif`;
+  return `https://data.chc.ucsb.edu/products/EWX/data/forecasts/` +
+         `CHIRPS-GEFS_precip_v12/05day/precip_mean/` +
+         `data-mean_${start}_${end}.tif`;
 }
+// ————————————————
 
 // Mock function to generate a simple precipitation value
 function getMockPrecipitation() {
@@ -40,7 +44,7 @@ export async function runForecastPipeline() {
   
   try {
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    if (!res.ok) throw new Error(`Failed to download TIFF: ${res.status} ${res.statusText}`);
 
     const arrayBuffer = await res.arrayBuffer();
     if (arrayBuffer.byteLength === 0) {
@@ -60,6 +64,11 @@ export async function runForecastPipeline() {
       const py = Math.floor((originY - SITE.lat) / pxH);
       const idx = py * width + px;
       const precipitation = rasters[0][idx];
+
+      // Check if precipitation is valid
+      if (precipitation === undefined || isNaN(precipitation)) {
+        throw new Error("Invalid precipitation value in TIFF file");
+      }
 
       console.log(`📍 Precipitation at Tahcabo: ${precipitation} mm`);
 
