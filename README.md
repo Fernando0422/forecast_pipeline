@@ -40,12 +40,12 @@ A Firebase-based pipeline that fetches precipitation forecast data from CHIRPS-G
 
 ### Production Deployment
 
-The pipeline is automatically deployed and runs daily at 00:30 UTC via GitHub Actions. The workflow:
+The pipeline is automatically deployed and runs daily at 12:00 UTC via GitHub Actions. The workflow:
 
 1. Checks out the latest code
 2. Creates a serviceAccountKey.json from the FIREBASE_SERVICE_ACCOUNT secret
 3. Runs the pipeline using the production Firestore instance
-4. See `.github/workflows/daily-pipeline.yml` for full CI steps
+4. See `.github/workflows/forecast-pipeline.yml` for full CI steps
 
 ### Hosting URL
 
@@ -63,5 +63,5 @@ For example: `https://mayan-roots-43fe8.web.app/forecasts/data-mean_20250424_202
   - `pipeline.mjs` - Core pipeline logic
   - `serviceAccountKey.json` - Firebase service account credentials (not in repo)
 - `.github/workflows/` - GitHub Actions workflows
-  - `daily-pipeline.yml` - Daily forecast pipeline job
+  - `forecast-pipeline.yml` - Daily forecast pipeline job
 - `firebase.json` - Firebase configuration 
