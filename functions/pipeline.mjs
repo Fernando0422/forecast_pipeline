@@ -63,10 +63,13 @@ export async function runForecastPipeline() {
       const px = Math.floor((SITE.lon - originX) / pxW);
       const py = Math.floor((originY - SITE.lat) / pxH);
       const idx = py * width + px;
-      const precipitation = rasters[0][idx];
+      let precipitation = rasters[0][idx];
 
       // Check if precipitation is valid
-      if (precipitation === undefined || isNaN(precipitation)) {
+      if (precipitation === undefined) {
+        console.warn('Missing precipitation value, treating as 0');
+        precipitation = 0;
+      } else if (isNaN(precipitation)) {
         throw new Error("Invalid precipitation value in TIFF file");
       }
 
