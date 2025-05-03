@@ -14,7 +14,8 @@ jobs:
         working-directory: ./functions
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
     - name: Set up Node.js
       uses: actions/setup-node@v4
@@ -27,10 +28,14 @@ jobs:
       run: npm ci
 
     - name: Create service account key file
-      run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > serviceAccountKey.json
+      run: echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > serviceAccountKey.json
 
     - name: Run forecast pipeline
       run: npm start
+
+    - name: Print success message
+      if: success()
+      run: echo "✅ Forecast pipeline completed successfully!"
 
     - name: Clean up secrets
       if: always()
