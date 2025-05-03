@@ -1,0 +1,20 @@
+[debug] [2025-04-24T03:05:31.211Z] ----------------------------------------------------------------------
+[debug] [2025-04-24T03:05:31.217Z] Command:       /usr/local/bin/node /usr/local/bin/firebase emulators:start --only firestore,auth
+[debug] [2025-04-24T03:05:31.217Z] CLI Version:   14.2.0
+[debug] [2025-04-24T03:05:31.217Z] Platform:      darwin
+[debug] [2025-04-24T03:05:31.218Z] Node Version:  v20.18.0
+[debug] [2025-04-24T03:05:31.218Z] Time:          Wed Apr 23 2025 20:05:31 GMT-0700 (Pacific Daylight Time)
+[debug] [2025-04-24T03:05:31.218Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-04-24T03:05:31.219Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2025-04-24T03:05:31.250Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-04-24T03:05:31.251Z] > authorizing via signed-in user (fernando.rojas0422@gmail.com)
+[warn] ⚠  Could not find config (firebase.json) so using defaults. 
+[debug] [2025-04-24T03:05:31.430Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2025-04-24T03:05:31.430Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
+[debug] [2025-04-24T03:05:31.537Z] openjdk version "17.0.15" 2025-04-15
+
+[debug] [2025-04-24T03:05:31.537Z] OpenJDK Runtime Environment Homebrew (build 17.0.15+0)
+OpenJDK 64-Bit Server VM Homebrew (build 17.0.15+0, mixed mode, sharing)
+
+[debug] [2025-04-24T03:05:31.540Z] Parsed Java major version: 17

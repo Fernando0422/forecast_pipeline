@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // only signed‑in users can read the latest forecast
+    match /forecast_results/latest {
+      allow read:  if request.auth != null;
+      allow write: if false;    // only our CI pipeline writes here
+    }
+    // …your other existing rules…
+  }
+}

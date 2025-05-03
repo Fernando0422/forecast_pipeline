@@ -1,0 +1,32 @@
+name: Daily Forecast Pipeline
+
+on:
+  schedule:
+    - cron: '30 0 * * *'  # every day 00:30 UTC
+  workflow_dispatch:
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    env:
+      FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Decode Service Account
+        run: |
+          mkdir -p functions
+          echo "${{ env.FIREBASE_SERVICE_ACCOUNT }}" | base64 --decode > functions/serviceAccountKey.json
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        working-directory: functions
+        run: npm ci
+
+      - name: Run pipeline
+        working-directory: functions
+        run: node index.mjs 

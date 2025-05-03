@@ -1,0 +1,11 @@
+# functions/.gitignore
+# node modules
+node_modules/
+
+# don’t check in your service account
+serviceAccountKey.json
+
+# emulator & debug logs
+*.log
+.firebaserc
+serviceAccountKey.json
