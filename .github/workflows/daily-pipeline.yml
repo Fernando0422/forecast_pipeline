@@ -16,7 +16,10 @@ jobs:
       - name: Decode Service Account
         run: |
           mkdir -p functions
-          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > functions/serviceAccountKey.json
+          echo "${{ env.FIREBASE_SERVICE_ACCOUNT }}" | base64 --decode > functions/serviceAccountKey.json
+
+      - name: Print service account file (debug)
+        run: cat functions/serviceAccountKey.json
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
