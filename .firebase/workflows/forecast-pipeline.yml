@@ -1,0 +1,37 @@
+name: Daily Forecast Pipeline
+
+on:
+  schedule:
+    # Run at 12:00 UTC (7:00 AM EST) every day
+    - cron: '0 12 * * *'
+  workflow_dispatch:  # Allow manual triggers
+
+jobs:
+  run-forecast:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./functions
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: './functions/package-lock.json'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Create service account key file
+      run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > serviceAccountKey.json
+
+    - name: Run forecast pipeline
+      run: npm start
+
+    - name: Clean up secrets
+      if: always()
+      run: rm -f serviceAccountKey.json 

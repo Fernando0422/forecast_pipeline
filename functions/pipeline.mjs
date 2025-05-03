@@ -55,57 +55,88 @@ export async function runForecastPipeline() {
       const tiff = await fromArrayBuffer(arrayBuffer);
       const image = await tiff.getImage();
       const rasters = await image.readRasters();
-      const [originX, originY] = image.getOrigin();
-      const [pxW, pxH] = image.getResolution();
       const width = image.getWidth();
+      const height = image.getHeight();
+      const bbox = image.getBoundingBox();
+      const [west, south, east, north] = bbox;
+      const pixelWidth = (east - west) / width;
+      const pixelHeight = (north - south) / height;
+      console.log(`Bounding box: [${west}, ${south}, ${east}, ${north}]`);
+      console.log(`Pixel size: width=${pixelWidth}, height=${pixelHeight}`);
+      console.log(`Image size: width=${width}, height=${height}`);
 
       // Compute pixel coordinates
-      const px = Math.floor((SITE.lon - originX) / pxW);
-      const py = Math.floor((originY - SITE.lat) / pxH);
+      const px = Math.floor((SITE.lon - west) / pixelWidth);
+      const py = Math.floor((north - SITE.lat) / pixelHeight);
       const idx = py * width + px;
+      console.log(`Computed pixel: px=${px}, py=${py}, idx=${idx}`);
+      console.log(`Raster length: ${rasters[0].length}`);
+
       let precipitation = rasters[0][idx];
+
+      // Fallback: search 3x3 window if main pixel is missing
+      if (precipitation === undefined || isNaN(precipitation)) {
+        console.warn('Main pixel missing, searching 3x3 window for valid value...');
+        let found = false;
+        for (let dy = -1; dy <= 1 && !found; dy++) {
+          for (let dx = -1; dx <= 1 && !found; dx++) {
+            if (dx === 0 && dy === 0) continue;
+            const nx = px + dx;
+            const ny = py + dy;
+            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+              const nidx = ny * width + nx;
+              const nval = rasters[0][nidx];
+              if (nval !== undefined && !isNaN(nval)) {
+                precipitation = nval;
+                found = true;
+                console.warn(`Used fallback pixel at (px=${nx}, py=${ny}, idx=${nidx}) with value ${nval}`);
+              }
+            }
+          }
+        }
+        if (!found) {
+          throw new Error('Missing precipitation value (even after fallback)');
+        }
+      }
 
       // Check if precipitation is valid
       if (precipitation === undefined) {
-        console.warn('Missing precipitation value, treating as 0');
-        precipitation = 0;
+        throw new Error('Missing precipitation value');
       } else if (isNaN(precipitation)) {
         throw new Error("Invalid precipitation value in TIFF file");
       }
 
       console.log(`📍 Precipitation at Tahcabo: ${precipitation} mm`);
 
-      // Write result to Firestore
-      const window = `${url.match(/data-mean_(\d+)_/)[1]} → ${url.match(/_(\d+)\.tif$/)[1]}`;
+      // Write result to Firestore (only real data)
       await db.collection("forecast_results").doc("latest").set({
-        precipitation: Number(precipitation.toFixed(2)),
-        window,
-        timestamp: DateTime.utc().toISO(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        isMock: false,
+        precipitation_mm: Number(precipitation.toFixed(2)),
+        source: "CHIRPS-GEFS",
+        source_file: url.split('/').pop(),
+        updated_at: DateTime.utc().toISO(),
       });
 
-      console.log("✅ Wrote forecast to Firestore");
+      console.log("✅ Wrote real forecast to Firestore");
       return true;
     } catch (tiffError) {
       console.error("🔥 TIFF processing failed:", tiffError);
-      throw new Error(`Invalid TIFF file: ${tiffError.message}`);
+      // Log error to a separate errors collection
+      await db.collection("forecast_results").doc("errors").set({
+        error: tiffError.message,
+        at: DateTime.utc().toISO(),
+        source_file: url.split('/').pop(),
+      }, { merge: true });
+      throw tiffError;
     }
   } catch (err) {
-    console.warn("⚠️ Using mock data:", err.message);
-    // Fallback: write mock data if real fetch fails
-    const mockPrecipitation = getMockPrecipitation();
-    await db.collection("forecast_results").doc("latest").set({
-      precipitation: Number(mockPrecipitation),
-      window: "mock",
+    console.error("❌ Pipeline failed:", err);
+    // Log error to a separate errors collection
+    await db.collection("forecast_results").doc("errors").set({
       error: err.message,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      isMock: true,
+      at: DateTime.utc().toISO(),
+      source_file: url.split('/').pop(),
     }, { merge: true });
-    
-    console.log(`📍 Using mock precipitation: ${mockPrecipitation} mm`);
-    console.log("✅ Wrote mock data to Firestore");
-    return true;
+    throw err;
   }
 }
 
